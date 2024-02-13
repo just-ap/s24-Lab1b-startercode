@@ -59,8 +59,6 @@ typedef struct {
   uint32_t xPSR; /** @brief Register value for xPSR */
 } interrupt_stack_frame;
 
-void systick_c_handler() {
-}
 
 void *pendsv_c_handler(void *context_ptr){
   (void) context_ptr;

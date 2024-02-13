@@ -19,13 +19,7 @@
  */
 typedef enum { PER_THREAD = 1, KERNEL_ONLY = 0 } protection_mode;
 
-/**
- * @brief      The SysTick interrupt handler.
- */
-void systick_c_handler( void );
-
-/**
- * @brief      The PendSV interrupt handler.
+/** @brief      The PendSV interrupt handler.
  */
 void *pendsv_c_handler( void * );
 
