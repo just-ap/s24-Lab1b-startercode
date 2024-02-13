@@ -6,7 +6,7 @@
  * 0x1ffff000 - 0x1ffff7ff - Boot firmware in system memory
  * 0x1ffff800 - 0x1fffffff - option bytes
  * 0x20000000 - 0x20018000 - SRAM (96k)
- * 0x40000000 - 0x40023400 - peripherals 
+ * 0x40000000 - 0x40023400 - peripherals
  */
 
 SECTIONS
@@ -36,21 +36,21 @@ SECTIONS
   }
 
 
-  .rodata : 
-  { 
+  .rodata :
+  {
     /*Ensures that app data is 16kb aligned*/
     . = ALIGN(16*1024);
-    _k_rodata = .; 
+    _k_rodata = .;
     <K_OBJ_DIR>/*.o (.rodata*); /*END REGION*/
-    /*Ensures that u rodata is 1KB aligned*/
-    . = ALIGN(1*1024);
+    /*Ensures that u rodata is 2KB aligned*/
+    . = ALIGN(2*1024);
     _u_rodata = .;
     <U_OBJ_DIR>/*.o (.rodata*); /*END REGION*/
     *(.rodata);
     _u_erodata = .;
   }
-  
-  . = ALIGN(1*1024);
+
+  . = ALIGN(2*1024);
   _erodata = . ;
 
   .data 0x20000000 : AT ( _erodata )
@@ -58,14 +58,14 @@ SECTIONS
     _k_data = .;
     <K_OBJ_DIR>/*.o (.data*); /*END REGION*/
     . = ALIGN(1*1024);
-    _u_data = .; 
+    _u_data = .;
     <U_OBJ_DIR>/*.o (.data*); /*END REGION*/
     *(.data);
     _u_edata = .;
     . = ALIGN(1*1024);
   }
 
-  .bss ALIGN(1024) : 
+  .bss ALIGN(1024) :
   {
     _bss_start = .;
     _k_bss = .;
@@ -87,29 +87,30 @@ SECTIONS
   . = ALIGN(8*1024);
 
   __heap_low = .; /* for _sbrk */
-  . = . + (8*1024); /* 8K of heap */
+  . = . + (4*1024); /* 4K of user heap */
   __heap_top = .; /* for _sbrk */
 
   __psp_stack_bottom = .;
-  . = . + (2*1024);  /* 2kB process memory */
+  . = . + (2*1024);  /* 2kB process stack */
   __psp_stack_top = .;
 
   __msp_stack_bottom = .;
-  . = . + (2*1024);  /* 2kB of msp stack */
+  . = . + (2*1024);  /* 2kB of main stack */
   __msp_stack_top = .;
 
-  __kheap_low_0 = .; /* for k_malloc */
-  . = . + (4*1024); /* 4 of k_heap */
-  __kheap_top_0 = .; /* for k_malloc */
+  /* unused space if you need it for very large kernel data structures */
+  __kheap_low_0 = .; 
+  . = . + (8*1024); /* 8K of space */
+  __kheap_top_0 = .;
 
   . = ALIGN(32*1024);
-  __kheap_low_1 = .; /* for k_malloc */
-  . = . + (32*1024); /* 32 of k_heap */
-  __kheap_top_1 = .; /* for k_malloc */
+  __thread_u_stacks_low = .; /* for thread user stacks */
+  . = . + (32*1024); /* 32K of space */
+  __thread_u_stacks_top = .; /* for thread user stacks */
 
-  __kheap_low_2 = .; /* for k_malloc */
-  . = . + (32*1024); /* 32 of k_heap */
-  __kheap_top_2 = .; /* for k_malloc */
+  __thread_k_stacks_low = .; /* for thread kernel stacks */
+  . = . + (32*1024); /* 32K of space */
+  __thread_k_stacks_top = .; /* for thread kernel stacks */
 
 
   end = .;
