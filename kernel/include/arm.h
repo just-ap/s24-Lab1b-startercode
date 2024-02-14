@@ -11,7 +11,7 @@
 
 #define intrinsic __attribute__( ( always_inline ) ) static inline
 
-#include <stdint.h>
+#include <unistd.h>
 
 void init_349( void );
 
@@ -50,14 +50,34 @@ intrinsic uint32_t load_exclusive_register( uint32_t *addr ) {
  * @brief      Enables the interrupts.
  */
 intrinsic void enable_interrupts( void ) {
-  __asm volatile( "CPSIE f" );
+  __asm volatile( "cpsie i" );
 }
 
 /**
  * @brief      Disables the interrupts.
  */
 intrinsic void disable_interrupts( void ) {
-  __asm volatile( "CPSID f" );
+  __asm volatile( "cpsid i" );
+}
+
+/**
+ * @brief      Saves the interrupt enabled state and
+ *             disables interrupts.
+ */
+intrinsic int save_interrupt_state_and_disable( void ) {
+  int result;
+  int disable_constant = 1;
+  __asm volatile( "mrs %0, PRIMASK"  : "=r" ( result ));
+  __asm volatile( "msr PRIMASK, %0" : "=r" (disable_constant));
+  return result;
+}
+
+/**
+ * @brief      Saves the interrupt enabled state and
+ *             disables interrupts.
+ */
+intrinsic void restore_interrupt_state( int state ) {
+  __asm volatile( "msr PRIMASK, %0" : "=r" ( state ) );
 }
 
 /**
@@ -104,6 +124,10 @@ intrinsic void wait_for_interrupt( void ) {
 void pend_pendsv( void );
 
 void clear_pendsv( void );
+
+int get_svc_status( void );
+
+void set_svc_status( int status );
 
 #undef intrinsic
 
