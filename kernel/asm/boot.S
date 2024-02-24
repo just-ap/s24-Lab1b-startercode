@@ -24,11 +24,11 @@ ivt:
 .word   spin                /* 8 RESERVED */
 .word   spin                /* 9 RESERVED*/
 .word   spin                /* 10 RESERVED */
-.word   _svc_asm_handler_   /* 11 SV call */
+.word   _svc_asm_handler_   /* 11 SV call (SVC Instruction) */
 .word   spin                /* 12 Debug reserved */
 .word   spin                /* 13 RESERVED */
 .word   _pend_sv_           /* 14 PendSV */
-.word   _sys_tick_asm_      /* 15 SysTick */
+.word   systick_c_handler   /* 15 SysTick */
 .word   spin                /* 16 IRQ0 Window Watchdog Interrupt */
 .word   spin                /* 17 IRQ1 PVD */
 .word   spin                /* 18 IRQ2 TAMPER */
@@ -67,7 +67,7 @@ ivt:
 .word   spin                /* 51 IRQ35 SPI1   */
 .word   spin                /* 52 IRQ36 SPI2   */
 .word   spin                /* 53 IRQ37 USART1 */
-.word   spin                /* 54 IRQ38 USART2 */
+.word   uart_irq_handler    /* 54 IRQ38 USART2 */
 .word   spin                /* 55 IRQ39 USART3   */
 .word   spin                /* 56 IRQ40 EXTI15_10   */
 .word   spin                /* 57 IRQ41 RTCAlarm */
@@ -168,7 +168,36 @@ _reset_:
 _sys_tick_asm_:
   bkpt
 
+/* This assembly function is going to be the first part of our SVC handler. The
+assembly function portion is responsible for copying the PSP value into a
+register like r0. We need to do this step in assembly because we don't have
+access to the special instruction needed to do this from C. I.e., the MRS
+instruction is used to copy the value from a special purpose register (like PSP)
+to a general purpose register (like r0).
+
+Actually, if you have a compiler that supports CMSIS, then there are actually C
+functions that, when encountered by the compiler, will generate these MRS and
+MSR instructions as needed to access certain special purpose registers like PSP
+and MSP. For example, on page 57 of the m4 generic manual, there is a function
+"__get_PSP()" that will allow you to read the PSP into a general purpose
+register under the hood. If you use that, then you wouldn't need this assembly
+handler and could just do it in C.
+*/
 .thumb_func
 .global _svc_asm_handler_
 _svc_asm_handler_:
-  bkpt
+  /* Write the value of the PSP in r0, and then branch to the C-portion of the
+  SVC handler. PSP's value is going to be the address of the item most recently
+  pushed to the stack == the address of the top of the stack.
+  NOTE: By placing this value in r0, we are quite simply following the ARM
+  Architecture  Procedure Calling Standard (AAPCS) for the Armv7-m ISA that our
+  Cortex M4 implements.
+
+  That is, in this assembly function, we are calling a function (svc_c_handler)
+  and placing the single argument for that function in r0--which is what the
+  AAPCS calling convention tells us to do. Then, the assembly that gets
+  generated for our C function will also follow that convention/protocol and
+  know to look in r0 for the first argument. Standards are cool.
+  */
+  MRS r0, PSP
+  b svc_c_handler
